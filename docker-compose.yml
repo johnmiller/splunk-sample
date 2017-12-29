@@ -1,0 +1,46 @@
+version: '3'
+
+volumes:
+  splunk-opt-splunk-etc:
+  splunk-opt-splunk-var:
+  forwarder-opt-splunk-etc:
+  forwarder-opt-splunk-var:
+
+services:
+  splunk:
+    hostname: splunk
+    image: splunk/splunk:7.0.0-monitor
+    environment:
+      SPLUNK_START_ARGS: --accept-license --answer-yes
+      SPLUNK_ENABLE_LISTEN: 9997
+      SPLUNK_ADD: tcp 1514
+      SPLUNK_USER: root
+    volumes:
+      - splunk-opt-splunk-etc:/opt/splunk/etc
+      - splunk-opt-splunk-var:/opt/splunk/var
+    ports:
+      - "8000:8000"
+      - "9997:9997"
+      - "8088:8088"
+      - "1514:1514"
+
+  forwarder:
+    hostname: forwarder
+    image: splunk/universalforwarder:7.0.0-monitor
+    environment: 
+      SPLUNK_START_ARGS: --accept-license --answer-yes
+      SPLUNK_FORWARD_SERVER: 'splunk:9997'
+      SPLUNK_USER: root
+    volumes:
+      - forwarder-opt-splunk-etc:/opt/splunk/etc
+      - forwarder-opt-splunk-var:/opt/splunk/var
+      - /var/lib/docker/containers:/host/containers:ro
+      - /var/log:/docker/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "8001:8000"
+      - "9998:9997"
+      - "8089:8088"
+      - "1515:1514"
+    depends_on:
+      - splunk
